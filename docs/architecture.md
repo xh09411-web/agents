@@ -36,11 +36,12 @@ This marketplace follows industry best practices with a focus on granularity, co
 
 ### Plugin Distribution
 
-- **88 marketplace plugins** (85 local + 3 external via git-subdir) optimized for specific use cases
+- **94 marketplace plugins** (92 local + 2 external via git-subdir) optimized for specific use cases
+- **Skills-only distribution** through `gh skill install wshobson/agents` and `npx skills add wshobson/agents`, which read `plugins/*/skills/` directly (see [harnesses.md](./harnesses.md#skills-only-installers))
 - **26 clear categories** with 1-10 plugins each for easy discovery
 - Organized by domain:
   - **Development**: 6 plugins (debugging, backend, frontend, UI, multi-platform, essentials)
-  - **Security**: 6 plugins (scanning, compliance, API, frontend/mobile, reverse engineering, hook policy)
+  - **Security**: 7 plugins (scanning, compliance, API, frontend/mobile, reverse engineering, hook policy, HOL Guard)
   - **Operations**: 4 plugins (incident, diagnostics, distributed, observability)
   - **Languages**: 10 plugins (Python, JS/TS, systems, JVM, scripting, functional, embedded, and more)
   - **Infrastructure**: 5 plugins (deployment, validation, K8s, cloud, CI/CD)
@@ -48,11 +49,11 @@ This marketplace follows industry best practices with a focus on granularity, co
 
 ### Component Breakdown
 
-**192 Local Specialized Agents**
+**202 Local Specialized Agents**
 
 - Domain experts with deep knowledge
 - Organized across architecture, languages, infrastructure, quality, data/AI, documentation, business, and SEO
-- Model-optimized with three-tier strategy (Opus, Sonnet, Haiku) for performance and cost
+- Model-optimized with a five-tier strategy (Fable, Opus, Sonnet, Haiku, Inherit) for performance and cost
 
 **16 Workflow Orchestrators**
 
@@ -60,7 +61,7 @@ This marketplace follows industry best practices with a focus on granularity, co
 - Complex operations like full-stack development, security hardening, ML pipelines, incident response
 - Pre-configured agent workflows
 
-**102 Local Commands**
+**105 Local Commands**
 
 - Optimized utilities including:
   - Project scaffolding (Python, TypeScript, Rust)
@@ -69,11 +70,11 @@ This marketplace follows industry best practices with a focus on granularity, co
   - Component scaffolding (React, React Native)
   - Infrastructure setup (Terraform, Kubernetes)
 
-**156 Local Agent Skills**
+**183 Local Agent Skills**
 
 - Modular knowledge packages
 - Progressive disclosure architecture
-- Domain-specific expertise across 41 plugins
+- Domain-specific expertise across 51 plugins
 - Spec-compliant (Anthropic Agent Skills Specification)
 
 ## Repository Structure
@@ -81,7 +82,7 @@ This marketplace follows industry best practices with a focus on granularity, co
 ```
 claude-agents/
 ├── .claude-plugin/
-│   └── marketplace.json          # Marketplace catalog (88 plugins)
+│   └── marketplace.json          # Marketplace catalog (94 plugins)
 ├── plugins/                       # Isolated plugin directories
 │   ├── python-development/
 │   │   ├── agents/               # Python language agents
@@ -144,7 +145,7 @@ Each plugin contains:
 
 ### Minimum Requirements
 
-- At least one agent OR one command
+- At least one agent, command, OR skill
 - Clear, focused purpose
 - Proper frontmatter in all files
 - Entry in marketplace.json
@@ -194,20 +195,21 @@ description: What the skill does. Use when [trigger]. # Required: < 1024 chars
 - **Composability**: Mix and match skills across workflows
 - **Maintainability**: Isolated updates don't affect other skills
 
-See [Agent Skills](./agent-skills.md) for complete details on the 158 skills.
+See [Agent Skills](./agent-skills.md) for complete details on the 183 skills.
 
 ## Model Configuration Strategy
 
-### Four-Tier Architecture
+### Five-Tier Architecture
 
-The system uses Claude Opus, Sonnet, Haiku, and Inherit assignments strategically:
+The system uses Claude Fable, Opus, Sonnet, Haiku, and Inherit assignments strategically:
 
-| Model   | Count     | Use Case                                     |
-| ------- | --------- | -------------------------------------------- |
-| Opus    | 54 agents | Critical architecture, security, code review |
-| Sonnet  | 62 agents | Complex tasks, support with intelligence     |
-| Haiku   | 20 agents | Fast operational tasks                       |
-| Inherit | 49 agents | Defers model choice to the user at runtime   |
+| Model   | Count     | Use Case                                        |
+| ------- | --------- | ----------------------------------------------- |
+| Fable   | 2 agents  | Longest-horizon autonomous work (opt-in tier)   |
+| Opus    | 54 agents | Critical architecture, security, code review    |
+| Sonnet  | 70 agents | Complex tasks, support with intelligence        |
+| Haiku   | 24 agents | Fast operational tasks                          |
+| Inherit | 52 agents | Defers model choice to the user at runtime      |
 
 ### Selection Criteria
 
@@ -261,8 +263,8 @@ code-reviewer (Sonnet) validates architecture
 
 ### Component Coverage
 
-- **100% agent coverage** - all plugins include at least one agent
-- **100% component availability** - all 194 local agents accessible across plugins
+- **Full component coverage** - every plugin includes at least one agent, command, or skill
+- **100% component availability** - all 202 local agents accessible across plugins
 - **Efficient distribution** - 5.5 components per plugin average
 
 ### Discoverability
@@ -392,5 +394,5 @@ Feature Development Workflow:
 
 - [Agent Skills](./agent-skills.md) - Modular knowledge packages
 - [Agent Reference](./agents.md) - Complete agent catalog
-- [Plugin Reference](./plugins.md) - All 88 marketplace plugins
+- [Plugin Reference](./plugins.md) - All 94 marketplace plugins
 - [Usage Guide](./usage.md) - Commands and workflows

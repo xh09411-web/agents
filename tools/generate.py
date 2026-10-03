@@ -2,7 +2,7 @@
 """Unified CLI for emitting per-harness artifacts from claude-agents plugin sources.
 
 Usage:
-    python tools/generate.py --harness <codex|copilot|cursor|opencode|gemini> [--plugin <name>] [--all] [--clean] [--prune] [--strict]
+    python tools/generate.py --harness <codex|copilot|cursor|opencode|antigravity|pi> [--plugin <name>] [--all] [--clean] [--prune] [--strict]
 """
 
 from __future__ import annotations
@@ -33,8 +33,11 @@ _HARNESS_TARGETS = {
     "codex": [".codex", ".agents/plugins"],
     "cursor": [".cursor", ".cursor-plugin"],
     "opencode": [".opencode", "opencode.json"],
-    "gemini": ["commands", "agents", "skills"],
     "copilot": [".copilot/agents", ".copilot/skills", ".copilot/commands"],
+    "antigravity": [".antigravity"],
+    # `.pi/` is also Pi's project-local config dir, so a developer may keep their own
+    # settings and extensions there. The adapter owns only these three subtrees.
+    "pi": [".pi/skills", ".pi/prompts", ".pi/agents"],
 }
 
 
@@ -52,14 +55,18 @@ def get_adapter(harness_id: str, output_root: Path) -> HarnessAdapter:
         from tools.adapters.opencode import OpenCodeAdapter
 
         return OpenCodeAdapter(output_root=output_root)
-    if harness_id == "gemini":
-        from tools.adapters.gemini import GeminiAdapter
-
-        return GeminiAdapter(output_root=output_root)
     if harness_id == "copilot":
         from tools.adapters.copilot import CopilotAdapter
 
         return CopilotAdapter(output_root=output_root)
+    if harness_id == "antigravity":
+        from tools.adapters.antigravity import AntigravityAdapter
+
+        return AntigravityAdapter(output_root=output_root)
+    if harness_id == "pi":
+        from tools.adapters.pi import PiAdapter
+
+        return PiAdapter(output_root=output_root)
     raise ValueError(f"Unknown harness: {harness_id}. Supported: {supported_harnesses()}")
 
 
@@ -155,11 +162,6 @@ def prune_orphans(harness_id: str, output_root: Path, written: set[Path]) -> lis
         d = output_root / ".opencode"
         if d.is_dir():
             candidates.extend(p for p in d.rglob("*") if p.is_file())
-    elif harness_id == "gemini":
-        for sub in ("commands", "agents", "skills"):
-            d = output_root / sub
-            if d.is_dir():
-                candidates.extend(p for p in d.rglob("*") if p.is_file())
     elif harness_id == "copilot":
         for sub in ("agents", "skills"):
             d = output_root / ".copilot" / sub
@@ -168,6 +170,17 @@ def prune_orphans(harness_id: str, output_root: Path, written: set[Path]) -> lis
         d = output_root / ".copilot" / "commands"
         if d.is_dir():
             candidates.extend(p for p in d.rglob("*") if p.is_file())
+    elif harness_id == "antigravity":
+        d = output_root / ".antigravity"
+        if d.is_dir():
+            candidates.extend(p for p in d.rglob("*") if p.is_file())
+    elif harness_id == "pi":
+        # Only the three adapter-owned subtrees. Anything else under `.pi/` belongs to
+        # the developer, because Pi reads its own project config from the same dir.
+        for sub in ("skills", "prompts", "agents"):
+            d = output_root / ".pi" / sub
+            if d.is_dir():
+                candidates.extend(p for p in d.rglob("*") if p.is_file())
     elif harness_id == "cursor":
         # Both .cursor-plugin/plugins/*.json and .cursor/rules/*.mdc are adapter outputs.
         for sub_path in (
@@ -181,6 +194,14 @@ def prune_orphans(harness_id: str, output_root: Path, written: set[Path]) -> lis
         if f.resolve() not in written_resolved:
             f.unlink()
             removed.append(f)
+
+    # Removing a plugin's last file leaves its directory behind (e.g. an emptied
+    # .codex/skills/<plugin>__<skill>/); sweep those so orphaned dirs don't linger.
+    for f in removed:
+        d = f.parent
+        while d != output_root and d.is_dir() and not any(d.iterdir()):
+            d.rmdir()
+            d = d.parent
     return removed
 
 
@@ -192,7 +213,7 @@ def main() -> int:
         "--harness",
         required=True,
         choices=supported_harnesses(),
-        help="Target harness (codex, copilot, cursor, opencode, or gemini).",
+        help="Target harness (codex, copilot, cursor, opencode, antigravity, or pi).",
     )
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--plugin", help="Generate only for the named plugin.")

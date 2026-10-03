@@ -1,6 +1,15 @@
 # Agent Skills
 
-Agent Skills are modular packages that extend Claude's capabilities with specialized domain knowledge, following Anthropic's [Agent Skills Specification](https://github.com/anthropics/skills/blob/main/agent_skills_spec.md). This plugin ecosystem includes **158 local specialized skills** across 44 plugins, enabling progressive disclosure and efficient token usage.
+Agent Skills are modular packages that extend Claude's capabilities with specialized domain knowledge, following Anthropic's [Agent Skills Specification](https://github.com/anthropics/skills/blob/main/agent_skills_spec.md). This plugin ecosystem includes **184 local specialized skills** across 51 plugins, enabling progressive disclosure and efficient token usage.
+
+Install any skill on its own, into any agent, with the Agent Skills installers:
+
+```bash
+gh skill install wshobson/agents <skill>              # GitHub CLI 2.90+
+npx skills add wshobson/agents --skill <skill>        # vercel-labs/skills
+```
+
+Naming, pinning, and gotchas: [harnesses.md](./harnesses.md#skills-only-installers).
 
 ## Overview
 
@@ -183,6 +192,18 @@ Skills provide Claude with deep expertise in specific domains without loading ev
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | **before-you-build** | Review demand, positioning, monetization, retention, trust, distribution, and feature-adoption risk before implementation starts |
 
+### Avoid AI Writing (1 skill)
+
+| Skill                | Description                                                                                                 |
+| -------------------- | ----------------------------------------------------------------------------------------------------------- |
+| **avoid-ai-writing** | Audit and rewrite prose that reads as machine-generated, with detect-only, rewrite, and edit-in-place modes   |
+
+### Superself (1 skill)
+
+| Skill         | Description                                                                                                                   |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| **superself** | Drive the Superself `self` CLI: read `self context` at session start, attach work to a unit, report with evidence, close with proof |
+
 ### Data Engineering (4 skills)
 
 | Skill                           | Description                                                                 |
@@ -237,12 +258,13 @@ Skills provide Claude with deep expertise in specific domains without loading ev
 | **gdpr-data-handling**            | Implement GDPR-compliant data processing with consent management |
 | **employment-contract-templates** | Generate employment contracts with jurisdiction-specific clauses |
 
-### Incident Response (3 skills)
+### Incident Response (4 skills)
 
 | Skill                          | Description                                                           |
 | ------------------------------ | --------------------------------------------------------------------- |
 | **postmortem-writing**         | Write blameless postmortems with root cause analysis and action items |
 | **incident-runbook-templates** | Create runbooks for common incident scenarios with escalation paths   |
+| **connectivity-triage**        | Diagnose active macOS connectivity failures and localize the likely fault domain |
 | **on-call-handoff-patterns**   | Design on-call handoffs with context preservation and alert routing   |
 
 ### Quantitative Trading (2 skills)
@@ -312,11 +334,12 @@ Skills provide Claude with deep expertise in specific domains without loading ev
 | ----------------------------- | ----------------------------------------------------------------- |
 | **postgresql-table-design**   | Design and review PostgreSQL-specific schemas with proper modeling |
 
-### Documentation Standards (1 skill)
+### Documentation Standards (2 skills)
 
 | Skill    | Description                                                                                   |
 | -------- | --------------------------------------------------------------------------------------------- |
 | **hads** | HADS (Human-AI Document Standard) — semantic Markdown tagging for token-efficient AI reading |
+| **grounded-vault** | raw/wiki/archive knowledge store with per-claim source links and git fingerprints for zero-token drift checks |
 
 ### .NET Contribution (1 skill)
 
@@ -328,7 +351,7 @@ Skills provide Claude with deep expertise in specific domains without loading ev
 
 | Skill                       | Description                                                                                |
 | --------------------------- | ------------------------------------------------------------------------------------------ |
-| **evaluation-methodology**  | PluginEval quality methodology — dimensions, rubrics, statistical methods, scoring formulas |
+| **evaluation-methodology**  | PluginEval quality methodology, covering dimensions, rubrics, and scoring formulas         |
 
 ### Block No-Verify (1 skill)
 
@@ -347,6 +370,39 @@ Skills provide Claude with deep expertise in specific domains without loading ev
 | Skill                  | Description                                                                                                              |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | **social-publishing**  | Schedule and publish social media posts across 13 platforms via the SocialClaw API                                       |
+
+### LLM Fine-Tuning (10 skills)
+
+| Skill                           | Description                                                                              |
+| ------------------------------- | ---------------------------------------------------------------------------------------- |
+| **eval-harness-first**          | Build the eval harness that gates every run: golden sets, graders, judge calibration     |
+| **finetuning-method-selection** | Decide whether to fine-tune at all and route to the right method and base model          |
+| **dataset-curation**            | Prepare, format, and validate datasets for SFT and preference training                   |
+| **lora-qlora-recipes**          | Configure LoRA/QLoRA supervised fine-tuning with best-practice hyperparameters           |
+| **preference-optimization**     | Align a fine-tuned model with preference data using DPO, ORPO, KTO, or SimPO             |
+| **grpo-rlvr-training**          | Train reasoning and verifiable-task behavior with GRPO and RLVR reward functions         |
+| **vision-sft**                  | Fine-tune vision-language models with supervised learning on image+text data             |
+| **trace-to-training-data**      | Convert eval traces and production logs into SFT examples and preference pairs           |
+| **checkpoint-promotion**        | Gate checkpoints with drift budgets, paired comparison, and forgetting checks            |
+| **quantized-export**            | Export a promoted model as merged safetensors, LoRA-only, GGUF with imatrix, or FP8      |
+
+### PPTX Deck Creation (5 skills)
+
+| Skill                            | Description                                                                              |
+| -------------------------------- | ---------------------------------------------------------------------------------------- |
+| **pptx-deck-context**            | Prepare the narrative, sources, and design context for a new editable PPTX deck          |
+| **pptx-slide-specification**     | Author or repair a coordinate-explicit JSON specification for an editable PPTX deck      |
+| **pptx-visual-assets**           | Select and place approved icons, images, SVGs, diagrams, and infographics                |
+| **pptx-reference-deck-analysis** | Analyze a reference PPTX read-only for structure, theme, typography, and layout rhythm   |
+| **pptx-quality-gates**           | Validate or repair an editable PPTX deck for geometry, accessibility, and editability    |
+
+### DGX Spark Ops (3 skills)
+
+| Skill                        | Description                                                                              |
+| ---------------------------- | ---------------------------------------------------------------------------------------- |
+| **spark-environment-setup**  | Set up ML training/inference environments on NVIDIA DGX Spark (GB10, aarch64, CUDA 13)  |
+| **spark-training-gotchas**   | Preflight and diagnose the ten known failure modes for ML training on DGX Spark         |
+| **spark-memory-thermal-ops** | Manage unified memory and thermals during long-running ML jobs on GB10                  |
 
 ## How Skills Work
 
@@ -392,7 +448,7 @@ fastapi-templates skill → Supplies production-ready templates
 
 ## Specification Compliance
 
-All 158 skills follow the [Agent Skills Specification](https://agentskills.io/specification):
+All 184 skills follow the [Agent Skills Specification](https://agentskills.io/specification):
 
 - ✓ Required `name` field (hyphen-case)
 - ✓ Required `description` field with "Use when" clause

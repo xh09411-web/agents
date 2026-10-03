@@ -6,15 +6,15 @@
     "url": "https://github.com/wshobson"
   },
   "metadata": {
-    "description": "Production-ready workflow orchestration with 88 marketplace plugins, 194 local specialized agents, and 158 local skills - optimized for granular installation and minimal token usage",
+    "description": "Production-ready workflow orchestration with 92 marketplace plugins, 202 local specialized agents, and 181 local skills - optimized for granular installation and minimal token usage",
     "version": "1.7.1"
   },
   "plugins": [
     {
       "name": "documentation-standards",
       "source": "./plugins/documentation-standards",
-      "description": "HADS (Human-AI Document Standard) \u2014 semantic tagging convention for writing docs that work efficiently for both humans and AI models. Reduces token consumption by separating machine-critical facts from human context.",
-      "version": "1.0.1",
+      "description": "HADS (Human-AI Document Standard) — semantic tagging convention for docs that work for both humans and AI models — plus the grounded-vault pattern for provenance-linked, drift-checked knowledge stores.",
+      "version": "1.1.0",
       "author": {
         "name": "Niksa Barlovic",
         "url": "https://github.com/catcam"
@@ -59,6 +59,19 @@
         "email": "seth@major7apps.com"
       },
       "homepage": "https://github.com/wshobson/agents",
+      "license": "MIT",
+      "category": "workflows"
+    },
+    {
+      "name": "operating-kit",
+      "source": "./plugins/operating-kit",
+      "description": "Portable operating method: session lifecycle agents, pre-ship code review, deploy with live verification and state doc update, and production log health check",
+      "version": "1.0.0",
+      "author": {
+        "name": "Sharrmavishal",
+        "url": "https://github.com/Sharrmavishal"
+      },
+      "homepage": "https://github.com/Sharrmavishal/operating-kit",
       "license": "MIT",
       "category": "workflows"
     },
@@ -193,6 +206,19 @@
       "license": "MIT"
     },
     {
+      "name": "llm-finetuning",
+      "description": "Eval-gated LLM fine-tuning lifecycle (LoRA/QLoRA, DPO, GRPO/RLVR, vision SFT, quantized export). Use when fine-tuning an open-weights model end-to-end: building the eval harness first, selecting method and model, preparing data, training with Unsloth or TRL, gating checkpoints, and exporting GGUF/FP8.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Seth Hobson",
+        "email": "seth@major7apps.com"
+      },
+      "source": "./plugins/llm-finetuning",
+      "category": "ai-ml",
+      "homepage": "https://github.com/wshobson/agents",
+      "license": "MIT"
+    },
+    {
       "name": "agent-orchestration",
       "source": "./plugins/agent-orchestration",
       "description": "Multi-agent system optimization, agent improvement workflows, and context management",
@@ -247,7 +273,7 @@
     {
       "name": "incident-response",
       "description": "Production incident management, triage workflows, and automated incident resolution",
-      "version": "1.3.2",
+      "version": "1.4.0",
       "author": {
         "name": "Seth Hobson",
         "email": "seth@major7apps.com"
@@ -622,6 +648,19 @@
       "category": "documentation"
     },
     {
+      "name": "avoid-ai-writing",
+      "source": "./plugins/avoid-ai-writing",
+      "description": "Audit and rewrite prose that reads as machine-generated, across READMEs, changelogs, PR descriptions, docs, and blog copy, with detect-only, rewrite, and edit-in-place modes.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Conor Bronsdon",
+        "url": "https://github.com/conorbronsdon"
+      },
+      "homepage": "https://github.com/conorbronsdon/avoid-ai-writing",
+      "license": "MIT",
+      "category": "documentation"
+    },
+    {
       "name": "multi-platform-apps",
       "source": "./plugins/multi-platform-apps",
       "description": "Cross-platform application development coordinating web, iOS, Android, and desktop implementations",
@@ -722,6 +761,19 @@
         "url": "https://github.com/ndesv21"
       },
       "homepage": "https://getsocialclaw.com",
+      "license": "MIT",
+      "category": "marketing"
+    },
+    {
+      "name": "hermes-tweet",
+      "source": "./plugins/hermes-tweet",
+      "version": "0.1.13",
+      "description": "Hermes Agent plugin for public X/Twitter research and approval-gated private or state-changing operations through Hermes Tweet",
+      "author": {
+        "name": "Xquik",
+        "email": ""
+      },
+      "homepage": "https://github.com/Xquik-dev/hermes-tweet#readme",
       "license": "MIT",
       "category": "marketing"
     },
@@ -921,6 +973,19 @@
       "category": "development"
     },
     {
+      "name": "dgx-spark-ops",
+      "description": "NVIDIA DGX Spark (GB10) environment operations. Use when setting up, preflighting, or debugging ML workloads on DGX Spark or aarch64 Blackwell hardware \u2014 CUDA-13 wheel/ABI checks, unified-memory OOM ladders, thermal monitoring.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Seth Hobson",
+        "email": "seth@major7apps.com"
+      },
+      "source": "./plugins/dgx-spark-ops",
+      "category": "ai-ml",
+      "homepage": "https://github.com/wshobson/agents",
+      "license": "MIT"
+    },
+    {
       "name": "reverse-engineering",
       "source": "./plugins/reverse-engineering",
       "description": "Binary reverse engineering, malware analysis, firmware security, and software protection research for authorized security research, CTF competitions, and defensive security",
@@ -945,6 +1010,19 @@
       "category": "workflows",
       "homepage": "https://github.com/wshobson/agents",
       "license": "Apache-2.0"
+    },
+    {
+      "name": "superself",
+      "source": "./plugins/superself",
+      "description": "Drive the Superself `self` CLI: version control for a project's state (goals, decisions, work units, reports) kept outside the code repo, so a session reads context at start, reports with evidence, and the next session picks up where this one left off",
+      "version": "1.0.0",
+      "author": {
+        "name": "fxylabs",
+        "url": "https://github.com/fxylabs"
+      },
+      "homepage": "https://github.com/fxylabs/superself",
+      "license": "Apache-2.0",
+      "category": "workflows"
     },
     {
       "name": "ui-design",
@@ -1013,8 +1091,8 @@
     {
       "name": "plugin-eval",
       "source": "./plugins/plugin-eval",
-      "description": "Three-layer quality evaluation framework for Claude Code plugins with Elo ranking",
-      "version": "0.1.1",
+      "description": "Static lint for Claude Code plugins and skills, with experimental LLM scoring for skills",
+      "version": "0.1.2",
       "author": {
         "name": "Seth Hobson"
       },
@@ -1025,7 +1103,7 @@
       "name": "block-no-verify",
       "source": "./plugins/block-no-verify",
       "description": "PreToolUse hook that prevents AI agents from using --no-verify, --no-gpg-sign, and other bypass flags that skip git hooks",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "author": {
         "name": "cskwork"
       },
@@ -1052,27 +1130,36 @@
       "category": "memory"
     },
     {
-      "name": "qa-orchestra",
+      "name": "hol-guard",
       "source": {
         "source": "git-subdir",
-        "url": "https://github.com/Anasss/qa-orchestra.git",
-        "path": "."
+        "url": "https://github.com/hashgraph-online/hol-guard-plugin.git",
+        "path": "distributions/wshobson-agents",
+        "sha": "74bea1c01397f4e172721a991e9052556ff0294b"
       },
-      "description": "Multi-agent QA toolkit with 10 specialized agents covering the full QA lifecycle \u2014 orchestrator, environment-manager, functional-reviewer, test-scenario-designer, browser-validator, automation-writer, manual-validator, bug-reporter, release-analyzer, and smart-test-selector. Stack-agnostic, output-chained, designed around live validation via Chrome MCP.",
-      "version": "1.0.0",
+      "description": "Local pre-execution security controls and pre-install scanning for AI agent tools, packages, skills, plugins, and MCP servers.",
+      "version": "0.1.0",
       "author": {
-        "name": "Anass Rach",
-        "url": "https://github.com/Anasss"
+        "name": "Hashgraph Online",
+        "url": "https://github.com/hashgraph-online"
       },
-      "homepage": "https://github.com/Anasss/qa-orchestra",
-      "license": "MIT",
-      "category": "testing"
+      "homepage": "https://hol.org/guard",
+      "license": "Apache-2.0",
+      "category": "security",
+      "keywords": [
+        "hol-guard",
+        "ai-security",
+        "agent-security",
+        "plugin-security",
+        "mcp-security",
+        "supply-chain-security"
+      ]
     },
     {
       "name": "protect-mcp",
       "source": "./plugins/protect-mcp",
       "description": "Cedar policy enforcement + Ed25519 signed receipts for every Claude Code tool call. First cryptographic governance plugin \u2014 decisions are policy-gated before they run and every decision produces a tamper-evident receipt verifiable offline.",
-      "version": "0.1.1",
+      "version": "0.1.4",
       "author": {
         "name": "Tom Farley",
         "email": "tommy@scopeblind.com",
@@ -1095,7 +1182,7 @@
       "name": "signed-audit-trails",
       "source": "./plugins/signed-audit-trails",
       "description": "Teaching skill: cookbook-style walkthrough for signed audit trails on every Claude Code tool call. Cedar policy, Ed25519 receipts, offline verification, CI/CD integration, SLSA composition. Pairs with the protect-mcp runtime plugin.",
-      "version": "0.1.1",
+      "version": "0.1.3",
       "author": {
         "name": "Tom Farley",
         "email": "tommy@scopeblind.com",
@@ -1119,7 +1206,7 @@
       "name": "review-agent-governance",
       "source": "./plugins/review-agent-governance",
       "description": "Require a human approval signal before an AI agent can post PR reviews, comments, merges, or writes to CI configuration. Joins protect-mcp and signed-audit-trails in the governance category; composes with protect-mcp for runtime enforcement.",
-      "version": "0.1.1",
+      "version": "0.1.4",
       "author": {
         "name": "Tom Farley",
         "email": "tommy@scopeblind.com",
@@ -1162,51 +1249,6 @@
       ]
     },
     {
-      "name": "storymap-skill",
-      "source": {
-        "source": "git-subdir",
-        "url": "https://github.com/MartinForReal/storymap-skill.git",
-        "path": "."
-      },
-      "description": "User story mapping (Jeff Patton style). Turns a goal, brief, or messy backlog into a sliced, prioritized delivery plan with per-persona stories. Four invocation modes (from scratch / brief / backlog / refinement), three prioritization methods (WSJF, RICE, MoSCoW), three slicing strategies (Patton classic, SAFe PI, Now/Next/Later). OKR coverage, dependency cycle detection, persona conflict resolution, slice-1 acceptance criteria, E2E test contract. Auto-activates in the Plan stage of Superpowers / gstack / GSD.",
-      "version": "0.0.3",
-      "author": {
-        "name": "MartinForReal",
-        "url": "https://github.com/MartinForReal"
-      },
-      "homepage": "https://github.com/MartinForReal/storymap-skill",
-      "license": "MIT",
-      "category": "workflows",
-      "keywords": [
-        "user-story-mapping",
-        "story-mapping",
-        "agile",
-        "safe",
-        "wsjf",
-        "rice",
-        "moscow",
-        "mvp",
-        "pi-planning",
-        "product-discovery",
-        "jeff-patton",
-        "backlog-management",
-        "personas"
-      ]
-    },
-    {
-      "name": "runapi-mcp",
-      "source": "./plugins/runapi-mcp",
-      "description": "RunAPI MCP server for browsing models, checking pricing, and creating image, video, music, audio, and LLM tasks.",
-      "version": "0.1.3",
-      "author": {
-        "name": "RunAPI",
-        "url": "https://runapi.ai"
-      },
-      "homepage": "https://github.com/runapi-ai/mcp",
-      "license": "Apache-2.0",
-      "category": "ai-ml"
-    },
-    {
       "name": "file-conversion",
       "source": "./plugins/file-conversion",
       "description": "Convert files between 999 routes \u2014 PDF to Word, HEIC to JPG, MP4 to MP3, CSV to JSON, EPUB to MOBI \u2014 via the free ChangeThisFile API. MCP-aware with a zero-dependency script fallback; no API key required.",
@@ -1218,6 +1260,38 @@
       "homepage": "https://github.com/aadilr/changethisfile-mcp",
       "license": "MIT",
       "category": "utilities"
+    },
+    {
+      "name": "skill-forge-essentials",
+      "source": "./plugins/skill-forge-essentials",
+      "description": "Behavioral skills for AI-specific failure patterns: hidden code debt from agent generation and context compaction amnesia via behavioral self-enforcement",
+      "version": "1.0.0",
+      "author": {
+        "name": "Adit Jain",
+        "url": "https://github.com/Adit-Jain-srm"
+      },
+      "license": "MIT",
+      "category": "quality"
+    },
+    {
+      "name": "pptx-deck-creation",
+      "source": "./plugins/pptx-deck-creation",
+      "description": "Create production-ready, editable PowerPoint decks through a spec-first, coordinate-explicit workflow with read-only reference analysis and quality gates.",
+      "version": "1.0.1",
+      "author": {
+        "name": "kimtth"
+      },
+      "homepage": "https://github.com/kimtth/agent-pptify-kit",
+      "license": "MIT",
+      "category": "creative",
+      "keywords": [
+        "powerpoint",
+        "pptx",
+        "presentations",
+        "slide-decks",
+        "deck-generation",
+        "slide-design"
+      ]
     }
   ]
 }

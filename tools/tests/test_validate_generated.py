@@ -8,11 +8,12 @@ from pathlib import Path
 import pytest
 from tools.validate_generated import (
     Report,
+    validate_antigravity,
     validate_codex,
     validate_copilot,
     validate_cursor,
-    validate_gemini,
     validate_opencode,
+    validate_pi,
 )
 
 
@@ -250,7 +251,7 @@ class TestOpenCodeValidator:
         agents = tmp_path / ".opencode" / "agents"
         agents.mkdir(parents=True)
         (agents / "no_mode.md").write_text(
-            "---\nname: no_mode\ndescription: Use when testing.\nmodel: anthropic/claude-sonnet-4-6\n---\n\nBody.\n"
+            "---\nname: no_mode\ndescription: Use when testing.\nmodel: anthropic/claude-sonnet-5\n---\n\nBody.\n"
         )
 
         report = Report()
@@ -275,7 +276,7 @@ class TestOpenCodeValidator:
         agents.mkdir(parents=True)
         (agents / "bad_perm.md").write_text(
             "---\nname: bad_perm\ndescription: Use when testing.\nmode: subagent\n"
-            "model: anthropic/claude-sonnet-4-6\npermission:\n  fly_drone: allow\n---\n\nBody.\n"
+            "model: anthropic/claude-sonnet-5\npermission:\n  fly_drone: allow\n---\n\nBody.\n"
         )
 
         report = Report()
@@ -295,7 +296,7 @@ class TestOpenCodeValidator:
         agents.mkdir(parents=True)
         (agents / "nested.md").write_text(
             "---\nname: nested\ndescription: Use when nested.\nmode: subagent\n"
-            "model: anthropic/claude-sonnet-4-6\n"
+            "model: anthropic/claude-sonnet-5\n"
             "metadata:\n  permission:\n    fly_drone: allow\n"
             "---\n\nBody.\n"
         )
@@ -311,7 +312,7 @@ class TestOpenCodeValidator:
         agents.mkdir(parents=True)
         (agents / "bad_value.md").write_text(
             "---\nname: bad_value\ndescription: Use when testing.\nmode: subagent\n"
-            "model: anthropic/claude-sonnet-4-6\npermission:\n  read: maybe\n---\n\nBody.\n"
+            "model: anthropic/claude-sonnet-5\npermission:\n  read: maybe\n---\n\nBody.\n"
         )
 
         report = Report()
@@ -366,50 +367,429 @@ class TestOpenCodeValidator:
         assert any("64" in f.message for f in report.errors())
 
 
-# ── Gemini ───────────────────────────────────────────────────────────────────
+# ── Antigravity ──────────────────────────────────────────────────────────────
 
 
-class TestGeminiValidator:
+def _write_plugin_json(plugin_dir: Path, content: str) -> None:
+    plugin_dir.mkdir(parents=True, exist_ok=True)
+    (plugin_dir / "plugin.json").write_text(content)
+
+
+class TestAntigravityValidator:
+    def test_missing_plugin_json_errors(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+        _patch_worktree(monkeypatch, tmp_path)
+        plugin_dir = tmp_path / ".antigravity" / "plugins" / "demo"
+        plugin_dir.mkdir(parents=True)
+
+        report = Report()
+        validate_antigravity(report)
+        assert any("missing plugin.json" in f.message for f in report.errors())
+
+    def test_plugin_json_parse_error(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+        _patch_worktree(monkeypatch, tmp_path)
+        plugin_dir = tmp_path / ".antigravity" / "plugins" / "demo"
+        _write_plugin_json(plugin_dir, "{not valid json")
+
+        report = Report()
+        validate_antigravity(report)
+        assert any("JSON parse error" in f.message for f in report.errors())
+
+    def test_plugin_json_missing_name_errors(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+        _patch_worktree(monkeypatch, tmp_path)
+        plugin_dir = tmp_path / ".antigravity" / "plugins" / "demo"
+        _write_plugin_json(plugin_dir, "{}")
+
+        report = Report()
+        validate_antigravity(report)
+        assert any("missing or empty required `name`" in f.message for f in report.errors())
+
+    def test_plugin_json_unsafe_name_errors(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+        _patch_worktree(monkeypatch, tmp_path)
+        plugin_dir = tmp_path / ".antigravity" / "plugins" / "demo"
+        _write_plugin_json(plugin_dir, '{"name": "demo plugin!"}')
+
+        report = Report()
+        validate_antigravity(report)
+        assert any("not agy-safe" in f.message for f in report.errors())
+
+    def test_plugin_json_name_mismatch_dir_errors(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ):
+        _patch_worktree(monkeypatch, tmp_path)
+        plugin_dir = tmp_path / ".antigravity" / "plugins" / "demo"
+        _write_plugin_json(plugin_dir, '{"name": "other-name"}')
+
+        report = Report()
+        validate_antigravity(report)
+        assert any("!= directory name" in f.message for f in report.errors())
+
+    def test_skill_name_mismatch_dir_errors(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+        _patch_worktree(monkeypatch, tmp_path)
+        plugin_dir = tmp_path / ".antigravity" / "plugins" / "demo"
+        _write_plugin_json(plugin_dir, '{"name": "demo"}')
+        skill_dir = plugin_dir / "skills" / "hello"
+        skill_dir.mkdir(parents=True)
+        (skill_dir / "SKILL.md").write_text(
+            "---\nname: not-hello\ndescription: Use when testing.\n---\n\nBody.\n"
+        )
+
+        report = Report()
+        validate_antigravity(report)
+        assert any("frontmatter name" in f.message for f in report.errors())
+
+    def test_agent_missing_name_and_description_errors(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ):
+        _patch_worktree(monkeypatch, tmp_path)
+        plugin_dir = tmp_path / ".antigravity" / "plugins" / "demo"
+        _write_plugin_json(plugin_dir, '{"name": "demo"}')
+        agents_dir = plugin_dir / "agents"
+        agents_dir.mkdir(parents=True)
+        (agents_dir / "bad.md").write_text("---\nmodel: pro\n---\n\nBody.\n")
+
+        report = Report()
+        validate_antigravity(report)
+        errors = [f.message for f in report.errors()]
+        assert any("name" in m for m in errors)
+        assert any("description" in m for m in errors)
+
+    def test_agent_invalid_model_tier_errors(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+        _patch_worktree(monkeypatch, tmp_path)
+        plugin_dir = tmp_path / ".antigravity" / "plugins" / "demo"
+        _write_plugin_json(plugin_dir, '{"name": "demo"}')
+        agents_dir = plugin_dir / "agents"
+        agents_dir.mkdir(parents=True)
+        (agents_dir / "bad.md").write_text(
+            "---\nname: bad\ndescription: Use when testing.\nmodel: gemini-2.5-pro\n---\n\nBody.\n"
+        )
+
+        report = Report()
+        validate_antigravity(report)
+        assert any("not in" in f.message for f in report.errors())
+
+    @pytest.mark.parametrize("tier", ["inherit", "flash", "pro"])
+    def test_agent_valid_model_tiers_pass(
+        self, tier: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ):
+        _patch_worktree(monkeypatch, tmp_path)
+        plugin_dir = tmp_path / ".antigravity" / "plugins" / "demo"
+        _write_plugin_json(plugin_dir, '{"name": "demo"}')
+        agents_dir = plugin_dir / "agents"
+        agents_dir.mkdir(parents=True)
+        (agents_dir / "good.md").write_text(
+            f"---\nname: good\ndescription: Use when testing.\nmodel: {tier}\n---\n\nBody.\n"
+        )
+
+        report = Report()
+        validate_antigravity(report)
+        assert not report.errors()
+
     def test_command_toml_missing_keys_errors(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ):
         _patch_worktree(monkeypatch, tmp_path)
-        cmds = tmp_path / "commands"
-        cmds.mkdir()
-        (cmds / "incomplete.toml").write_text('description = "Just a desc, no prompt"\n')
+        plugin_dir = tmp_path / ".antigravity" / "plugins" / "demo"
+        _write_plugin_json(plugin_dir, '{"name": "demo"}')
+        cmds_dir = plugin_dir / "commands" / "demo"
+        cmds_dir.mkdir(parents=True)
+        (cmds_dir / "incomplete.toml").write_text('description = "Just a desc, no prompt"\n')
 
         report = Report()
-        validate_gemini(report)
-        assert any("missing keys" in f.message for f in report.errors())
+        validate_antigravity(report)
+        assert any("missing required `prompt`" in f.message for f in report.errors())
 
-    def test_prompt_without_args_warns(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    def test_plugin_json_array_does_not_crash(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ):
+        """A `plugin.json` containing a JSON array (not an object) must be reported
+        as a finding, not raise AttributeError from `.get()` on a list."""
         _patch_worktree(monkeypatch, tmp_path)
-        cmds = tmp_path / "commands"
-        cmds.mkdir()
-        (cmds / "no_args.toml").write_text('description = "Test"\nprompt = """Run this."""\n')
+        plugin_dir = tmp_path / ".antigravity" / "plugins" / "demo"
+        _write_plugin_json(plugin_dir, "[]")
 
         report = Report()
-        validate_gemini(report)
+        validate_antigravity(report)
+        assert any("must be a JSON object" in f.message for f in report.errors())
+
+    def test_command_toml_non_string_prompt_does_not_crash(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ):
+        """A `prompt` that TOML-parses to a non-string (e.g. an integer) must be
+        reported as a finding, not raise TypeError from `in` on a non-iterable."""
+        _patch_worktree(monkeypatch, tmp_path)
+        plugin_dir = tmp_path / ".antigravity" / "plugins" / "demo"
+        _write_plugin_json(plugin_dir, '{"name": "demo"}')
+        cmds_dir = plugin_dir / "commands" / "demo"
+        cmds_dir.mkdir(parents=True)
+        (cmds_dir / "bad_prompt.toml").write_text('description = "Test"\nprompt = 1\n')
+
+        report = Report()
+        validate_antigravity(report)
+        assert any("`prompt` field must be a string" in f.message for f in report.errors())
+
+    def test_command_toml_non_string_description_errors(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ):
+        """A non-string `description` must be reported, not silently pass."""
+        _patch_worktree(monkeypatch, tmp_path)
+        plugin_dir = tmp_path / ".antigravity" / "plugins" / "demo"
+        _write_plugin_json(plugin_dir, '{"name": "demo"}')
+        cmds_dir = plugin_dir / "commands" / "demo"
+        cmds_dir.mkdir(parents=True)
+        (cmds_dir / "bad_description.toml").write_text(
+            'description = 1\nprompt = """Run this.\n\n{{args}}"""\n'
+        )
+
+        report = Report()
+        validate_antigravity(report)
+        assert any("`description` field must be a string" in f.message for f in report.errors())
+
+    def test_command_toml_parse_error(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+        _patch_worktree(monkeypatch, tmp_path)
+        plugin_dir = tmp_path / ".antigravity" / "plugins" / "demo"
+        _write_plugin_json(plugin_dir, '{"name": "demo"}')
+        cmds_dir = plugin_dir / "commands" / "demo"
+        cmds_dir.mkdir(parents=True)
+        (cmds_dir / "broken.toml").write_text("not = valid = toml = at = all")
+
+        report = Report()
+        validate_antigravity(report)
+        assert any("TOML parse error" in f.message for f in report.errors())
+
+    def test_command_prompt_without_args_warns(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ):
+        _patch_worktree(monkeypatch, tmp_path)
+        plugin_dir = tmp_path / ".antigravity" / "plugins" / "demo"
+        _write_plugin_json(plugin_dir, '{"name": "demo"}')
+        cmds_dir = plugin_dir / "commands" / "demo"
+        cmds_dir.mkdir(parents=True)
+        (cmds_dir / "no_args.toml").write_text('description = "Test"\nprompt = """Run this."""\n')
+
+        report = Report()
+        validate_antigravity(report)
         assert any("{{args}}" in f.message for f in report.warnings())
 
-    def test_non_gemini_model_warns(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    def test_valid_plugin_passes_with_no_findings(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ):
         _patch_worktree(monkeypatch, tmp_path)
-        agents = tmp_path / "agents"
-        agents.mkdir()
-        (agents / "wrong_model.md").write_text(
-            "---\nname: wrong_model\ndescription: Use when testing.\nmodel: gpt-5\n---\n\nBody.\n"
+        plugin_dir = tmp_path / ".antigravity" / "plugins" / "demo"
+        _write_plugin_json(plugin_dir, '{"name": "demo", "description": "Demo plugin"}')
+        (plugin_dir / "skills" / "hello").mkdir(parents=True)
+        (plugin_dir / "skills" / "hello" / "SKILL.md").write_text(
+            "---\nname: hello\ndescription: Use when greeting.\n---\n\nBody.\n"
+        )
+        (plugin_dir / "agents").mkdir(parents=True)
+        (plugin_dir / "agents" / "greeter.md").write_text(
+            "---\nname: greeter\ndescription: Use when delegating.\nmodel: pro\nsubagent: true\n"
+            "---\n\nBody.\n"
+        )
+        cmds_dir = plugin_dir / "commands" / "demo"
+        cmds_dir.mkdir(parents=True)
+        (cmds_dir / "say-hi.toml").write_text(
+            'description = "Say hi"\nprompt = """Greet the user.\n\n{{args}}"""\n'
         )
 
         report = Report()
-        validate_gemini(report)
-        assert any("Gemini model id" in f.message for f in report.warnings())
+        validate_antigravity(report)
+        assert not report.errors()
+        assert not report.warnings()
 
-    def test_oversized_gemini_md_warns(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+
+# ── Pi ───────────────────────────────────────────────────────────────────────
+
+
+def _write_pi_tree(root: Path) -> None:
+    skill = root / ".pi" / "skills" / "demo" / "hello"
+    skill.mkdir(parents=True)
+    (skill / "SKILL.md").write_text(
+        "---\nname: hello\ndescription: Use when testing.\n---\n\nBody.\n"
+    )
+    prompts = root / ".pi" / "prompts"
+    prompts.mkdir(parents=True)
+    (prompts / "demo__say-hi.md").write_text(
+        "---\ndescription: Send a greeting\n---\n\nHi $ARGUMENTS\n"
+    )
+    agents = root / ".pi" / "agents"
+    agents.mkdir(parents=True)
+    (agents / "demo__greeter.md").write_text(
+        "---\nname: greeter\ndescription: Use when greeting.\nmodel: anthropic/claude-sonnet-5\ntools: read, grep\n---\n\nYou greet.\n"
+    )
+
+
+class TestPiValidator:
+    def test_clean_output_no_findings(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         _patch_worktree(monkeypatch, tmp_path)
-        (tmp_path / "GEMINI.md").write_text("\n".join(["line"] * 200))
-
+        _write_pi_tree(tmp_path)
         report = Report()
-        validate_gemini(report)
+        validate_pi(report)
+        assert report.findings == []
+
+    def test_no_pi_dir_is_silent(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+        _patch_worktree(monkeypatch, tmp_path)
+        report = Report()
+        validate_pi(report)
+        assert report.findings == []
+
+    def test_skill_name_must_match_directory(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+        _patch_worktree(monkeypatch, tmp_path)
+        _write_pi_tree(tmp_path)
+        (tmp_path / ".pi" / "skills" / "demo" / "hello" / "SKILL.md").write_text(
+            "---\nname: other\ndescription: Use when testing.\n---\n\nBody.\n"
+        )
+        report = Report()
+        validate_pi(report)
+        assert any("!= directory" in f.message for f in report.errors())
+
+    def test_skill_missing_description_is_error(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ):
+        _patch_worktree(monkeypatch, tmp_path)
+        _write_pi_tree(tmp_path)
+        (tmp_path / ".pi" / "skills" / "demo" / "hello" / "SKILL.md").write_text(
+            "---\nname: hello\n---\n\nBody.\n"
+        )
+        report = Report()
+        validate_pi(report)
+        assert any("description" in f.message for f in report.errors())
+
+    def test_skill_dir_without_skill_md_is_error(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ):
+        _patch_worktree(monkeypatch, tmp_path)
+        _write_pi_tree(tmp_path)
+        (tmp_path / ".pi" / "skills" / "demo" / "empty").mkdir(parents=True)
+        report = Report()
+        validate_pi(report)
+        assert any("SKILL.md" in f.message for f in report.errors())
+
+    def test_skill_name_pattern_violation_is_warning(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ):
+        _patch_worktree(monkeypatch, tmp_path)
+        bad = tmp_path / ".pi" / "skills" / "demo" / "Bad_Name"
+        bad.mkdir(parents=True)
+        (bad / "SKILL.md").write_text(
+            "---\nname: Bad_Name\ndescription: Use when testing.\n---\n\nBody.\n"
+        )
+        report = Report()
+        validate_pi(report)
+        assert report.errors() == []
+        assert any("Bad_Name" in f.message for f in report.warnings())
+
+    def test_prompt_without_description_is_error(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ):
+        _patch_worktree(monkeypatch, tmp_path)
+        _write_pi_tree(tmp_path)
+        (tmp_path / ".pi" / "prompts" / "demo__say-hi.md").write_text(
+            "---\nargument-hint: x\n---\n\nHi\n"
+        )
+        report = Report()
+        validate_pi(report)
+        assert any(f.path.name == "demo__say-hi.md" for f in report.errors())
+
+    def test_prompt_filename_must_be_namespaced(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ):
+        _patch_worktree(monkeypatch, tmp_path)
+        _write_pi_tree(tmp_path)
+        (tmp_path / ".pi" / "prompts" / "say-hi.md").write_text("---\ndescription: d\n---\n\nHi\n")
+        report = Report()
+        validate_pi(report)
+        assert any("__" in f.message and f.path.name == "say-hi.md" for f in report.errors())
+
+    def test_prompt_filename_with_empty_plugin_is_error(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ):
+        _patch_worktree(monkeypatch, tmp_path)
+        _write_pi_tree(tmp_path)
+        (tmp_path / ".pi" / "prompts" / "__say-hi.md").write_text(
+            "---\ndescription: d\n---\n\nHi\n"
+        )
+        report = Report()
+        validate_pi(report)
         assert any(
-            "GEMINI.md" in str(f.path) and "cap: 150" in f.message for f in report.warnings()
+            f.path.name == "__say-hi.md" and "<plugin>__<command>" in f.message
+            for f in report.errors()
         )
+
+    def test_prompt_filename_with_empty_command_is_error(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ):
+        _patch_worktree(monkeypatch, tmp_path)
+        _write_pi_tree(tmp_path)
+        (tmp_path / ".pi" / "prompts" / "demo__.md").write_text("---\ndescription: d\n---\n\nHi\n")
+        report = Report()
+        validate_pi(report)
+        assert any(
+            f.path.name == "demo__.md" and "<plugin>__<command>" in f.message
+            for f in report.errors()
+        )
+
+    def test_agent_filename_must_be_namespaced(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ):
+        _patch_worktree(monkeypatch, tmp_path)
+        _write_pi_tree(tmp_path)
+        (tmp_path / ".pi" / "agents" / "greeter.md").write_text(
+            "---\nname: greeter\ndescription: Use when greeting.\n---\n\nYou greet.\n"
+        )
+        report = Report()
+        validate_pi(report)
+        assert any(
+            f.path.name == "greeter.md" and "<plugin>__<agent>" in f.message
+            for f in report.errors()
+        )
+
+    def test_agent_filename_with_empty_plugin_is_error(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ):
+        _patch_worktree(monkeypatch, tmp_path)
+        _write_pi_tree(tmp_path)
+        (tmp_path / ".pi" / "agents" / "__greeter.md").write_text(
+            "---\nname: greeter\ndescription: Use when greeting.\n---\n\nYou greet.\n"
+        )
+        report = Report()
+        validate_pi(report)
+        assert any(
+            f.path.name == "__greeter.md" and "<plugin>__<agent>" in f.message
+            for f in report.errors()
+        )
+
+    def test_agent_filename_with_empty_agent_is_error(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ):
+        _patch_worktree(monkeypatch, tmp_path)
+        _write_pi_tree(tmp_path)
+        (tmp_path / ".pi" / "agents" / "demo__.md").write_text(
+            "---\nname: greeter\ndescription: Use when greeting.\n---\n\nYou greet.\n"
+        )
+        report = Report()
+        validate_pi(report)
+        assert any(
+            f.path.name == "demo__.md" and "<plugin>__<agent>" in f.message for f in report.errors()
+        )
+
+    def test_agent_missing_name_is_error(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+        _patch_worktree(monkeypatch, tmp_path)
+        _write_pi_tree(tmp_path)
+        (tmp_path / ".pi" / "agents" / "demo__greeter.md").write_text(
+            "---\ndescription: Use when greeting.\n---\n\nYou greet.\n"
+        )
+        report = Report()
+        validate_pi(report)
+        assert any("name" in f.message for f in report.errors())
+
+    def test_agent_model_must_be_provider_qualified(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ):
+        _patch_worktree(monkeypatch, tmp_path)
+        _write_pi_tree(tmp_path)
+        (tmp_path / ".pi" / "agents" / "demo__greeter.md").write_text(
+            "---\nname: greeter\ndescription: Use when greeting.\nmodel: opus\n---\n\nYou greet.\n"
+        )
+        report = Report()
+        validate_pi(report)
+        assert any("provider/id" in f.message for f in report.errors())

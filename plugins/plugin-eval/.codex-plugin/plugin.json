@@ -1,11 +1,11 @@
 {
   "name": "plugin-eval",
-  "version": "0.1.1",
-  "description": "",
+  "version": "0.1.2",
+  "description": "Static lint for Claude Code plugins and skills, with experimental LLM scoring for skills",
   "skills": "./skills/",
   "interface": {
     "displayName": "Plugin Eval",
-    "shortDescription": "plugin-eval",
+    "shortDescription": "Static lint for Claude Code plugins and skills, with experimental LLM scoring for skills",
     "category": "Coding"
   }
 }

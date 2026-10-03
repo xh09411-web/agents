@@ -33,12 +33,18 @@ def read_plugin_json(plugin_dir: Path) -> dict:
         return {}
 
 
+def _is_one_level_mapping_entry(line: str) -> bool:
+    """Return whether a line has exactly one frontmatter indentation level."""
+    return bool(re.match(r"^(?: {2}|\t)\S", line))
+
+
 def parse_frontmatter(content: str) -> tuple[dict, str]:
     """Return (fields, body). Tolerant YAML-ish parser; no external dep.
 
     Supports:
     - scalar fields (`name: foo`)
     - inline lists (`tools: [a, b]`) and block lists (key: \\n  - a\\n  - b)
+    - one-level mappings (`metadata: \\n  version: 1.0.0`)
     - YAML block scalar indicators `>` and `|` (folded/literal multi-line strings)
     - 2-space continuation of scalar values
     """
@@ -100,6 +106,14 @@ def parse_frontmatter(content: str) -> tuple[dict, str]:
             if text:
                 existing = fields.get(current_key) or ""
                 fields[current_key] = (existing + " " + text).strip() if existing else text
+        elif (
+            current_key
+            and isinstance(fields.get(current_key), dict)
+            and _is_one_level_mapping_entry(line)
+        ):
+            nested = re.match(r"^(\w[\w-]*):\s*(.*)", line.strip())
+            if nested:
+                fields[current_key][nested.group(1)] = nested.group(2).strip().strip('"').strip("'")
         elif in_list and (
             isinstance(fields.get(current_key), list)
             or (isinstance(fields.get(current_key), str) and fields[current_key] == "")
@@ -123,6 +137,13 @@ def parse_frontmatter(content: str) -> tuple[dict, str]:
                 item = stripped.strip('",[] ')
                 if item and item != "]":
                     fields[current_key].append(item)
+            elif _is_one_level_mapping_entry(line):
+                nested = re.match(r"^(\w[\w-]*):\s*(.*)", stripped)
+                if nested:
+                    fields[current_key] = {
+                        nested.group(1): nested.group(2).strip().strip('"').strip("'")
+                    }
+                    in_list = False
         elif current_key and isinstance(fields.get(current_key), str) and line.startswith("  "):
             fields[current_key] += " " + line.strip().strip('"')
 
@@ -212,6 +233,104 @@ def split_tools_list(raw) -> list[str]:
     if isinstance(raw, str):
         return [t.strip() for t in raw.split(",") if t.strip()]
     return []
+
+
+# ── YAML frontmatter emission ─────────────────────────────────────────────────
+
+_YAML_SPECIAL_LEADS = (
+    "[",
+    "{",
+    "*",
+    "&",
+    "!",
+    "|",
+    ">",
+    "'",
+    '"',
+    "@",
+    "`",
+    "#",
+    "%",
+    ",",
+    "?",
+    ":",
+    "-",
+)
+
+# YAML 1.1 implicit booleans/null, which must be quoted to avoid loading as bool/None.
+# YAML 1.2 narrowed this list, but PyYAML's default is still 1.1 (and many consumers are
+# affected); quote conservatively.
+_YAML_RESERVED_WORDS = frozenset(
+    {
+        "true",
+        "false",
+        "yes",
+        "no",
+        "on",
+        "off",
+        "null",
+        "~",
+        "True",
+        "False",
+        "Yes",
+        "No",
+        "On",
+        "Off",
+        "Null",
+        "TRUE",
+        "FALSE",
+        "YES",
+        "NO",
+        "ON",
+        "OFF",
+        "NULL",
+    }
+)
+
+# Implicit numbers that a leading-digit test misses because they open with `+` or `.`.
+# PyYAML resolves the YAML 1.1 spellings, so `+1` loads as the int 1, `.5` and `.0` as
+# floats, and `.inf`, `.INF`, `+.inf`, `.nan`, `.NaN` as float infinity or not-a-number.
+# YAML 1.2 loaders go further and read a signed bare fraction such as `+.5` as a float
+# too. A string-valued field carrying any of these must be quoted to load back as the
+# string that was written. Values led by `-` are already covered by _YAML_SPECIAL_LEADS.
+# A dot followed by a non-number, `.gitignore` or `.info`, stays bare.
+_YAML_IMPLICIT_NUMBER = re.compile(r"^[-+]?\.?[0-9]|^[-+]?\.(?:inf|Inf|INF|nan|NaN|NAN)$")
+
+
+def yaml_scalar(value: object) -> str:
+    """Render a value as a YAML scalar, quoting when needed to avoid ambiguity.
+
+    Every adapter that writes frontmatter must route scalars through here. Emitting a
+    bare value that YAML cannot parse produces a file the target harness rejects at
+    load, and the repo's own validators use `parse_frontmatter` (a tolerant hand-rolled
+    reader) rather than a YAML parser, so they will not catch it.
+
+    Quotes when the value:
+    - is empty / pure whitespace
+    - starts with a YAML special character
+    - contains `:` followed by whitespace (would be interpreted as a key)
+    - contains ` #` (would be interpreted as a comment)
+    - has leading or trailing whitespace
+    - starts with a digit (number-like)
+    - is an implicit number led by `+` or `.`, such as `+1`, `.5`, `.inf` or `.nan`
+    - matches a YAML 1.1 implicit-boolean/null reserved word
+    """
+    s = str(value).replace("\n", " ")
+    needs_quote = (
+        s == ""
+        or s != s.strip()
+        or s.startswith(_YAML_SPECIAL_LEADS)
+        or ": " in s
+        or " #" in s
+        or s[:1].isdigit()
+        or _YAML_IMPLICIT_NUMBER.match(s) is not None
+        or s in _YAML_RESERVED_WORDS
+    )
+    if needs_quote:
+        # Use double quotes; escape embedded double-quotes and backslashes.
+        escaped = s.replace("\\", "\\\\").replace('"', '\\"')
+        return f'"{escaped}"'
+    return s
 
 
 # ── Source-of-truth dataclasses ───────────────────────────────────────────────
@@ -315,7 +434,7 @@ def load_plugin(plugin_name: str) -> PluginSource | None:
     """Load a plugin's source tree from `plugins/<name>/`.
 
     Plugin names with `__` are rejected: the adapter framework uses
-    `<plugin>__<leaf>` as a namespace separator across Codex/OpenCode/Gemini.
+    `<plugin>__<leaf>` as a namespace separator across Codex/OpenCode.
     A plugin name containing `__` would break stale-detection and produce
     ambiguous reverse-mappings in doc_gardener.
     """
